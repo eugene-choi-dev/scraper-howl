@@ -2,7 +2,7 @@
 
 *** PROJECT DESCRIPTION ***
 
-This project contains a Node.js script for scraping job classification data from a government website. It uses Puppeteer for scraping dynamic content and Express for setting up a simple server to trigger the scraping process.
+This project contains a Node.js script for scraping. It uses Puppeteer for scraping dynamic content and Express for setting up a simple server to trigger the scraping process.
 
 *** PREREQUISITES ***
 
