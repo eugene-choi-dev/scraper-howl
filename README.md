@@ -1,13 +1,16 @@
 *** Web Scraper ***
 
 *** Project Description ***
+
 This project contains a Node.js script for scraping job classification data from a government website. It uses Puppeteer for scraping dynamic content and Express for setting up a simple server to trigger the scraping process.
 
 *** Prerequisites ***
+
 Node.js
 npm (Node Package Manager)
 
 *** Installing Node.js and npm ***
+
 1. For Windows and macOS Users:
     Visit the official Node.js website to download the installer for your operating system.
     Run the downloaded installer and follow the prompts to install both Node.js and npm.
@@ -16,6 +19,7 @@ npm (Node Package Manager)
     `npm -v`
 
 *** Scraper Installation ***
+
 1. Clone the Repository
     `git clone https://github.com/eugene-choi-dev/scraper-howl.git`
     `cd scraper-howl`
@@ -24,6 +28,7 @@ npm (Node Package Manager)
     `npm install`
 
 *** Running the Project ***
+
 1. Start the Server
     `npm run start`
 `
@@ -34,4 +39,4 @@ npm (Node Package Manager)
 
 *** Notes ***
 
-The scraper will print to console the data scraped from each page as the application runs. After the application has finished processing all pages within the specified range, it will return all of the scraped data (`allItems`) in the browser window in JSON-like format. Enjoy!
+The scraper will print to console the data scraped from each page as the application runs. After the application has finished processing all pages within the specified range, it will return all of the scraped data (`allItems`) in the browser window in JSON-like format.
