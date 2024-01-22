@@ -33,4 +33,5 @@ npm (Node Package Manager)
     Open your web browser and navigate to http://localhost:8000/scrape
 
 *** Notes ***
-The scraper will print to console the data scraped from each page as the application runs. After the application has finished processing all pages within the specified range, it will return all of the scraped data (`allItems`) in the browser window in JSON-like format.
+
+The scraper will print to console the data scraped from each page as the application runs. After the application has finished processing all pages within the specified range, it will return all of the scraped data (`allItems`) in the browser window in JSON-like format. Enjoy!
