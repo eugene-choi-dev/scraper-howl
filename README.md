@@ -1,25 +1,27 @@
-*** WEB SCRAPER ***
+# Web Scraper
 
-*** PROJECT DESCRIPTION ***
+## Project Description
 
-This project contains a Node.js script for scraping. It uses Puppeteer for scraping dynamic content and Express for setting up a simple server to trigger the scraping process.
+This project contains a Node.js script for web scraping. It uses Puppeteer for scraping dynamic content and Express for setting up a simple server to trigger the scraping process.
 
-*** PREREQUISITES ***
+## Prerequisites
 
-Node.js
+- Node.js
+- npm (Node Package Manager)
 
-npm (Node Package Manager)
+## Installing Node.js & npm
 
-*** INSTALLING NODE.JS & NPM ***
+### For Windows and macOS Users:
 
-1. For Windows and macOS Users:
-    Visit the official Node.js website to download the installer for your operating system.
-    Run the downloaded installer and follow the prompts to install both Node.js and npm.
-2. Verify the installation by checking the version of Node.js and npm:
-    `node -v`
-    `npm -v`
+1. Visit the official [Node.js website](https://nodejs.org/) to download the installer for your operating system.
+2. Run the downloaded installer and follow the prompts to install both Node.js and npm.
 
-*** SCRAPER INSTALLATION ***
+### Verify the installation by checking the version of Node.js and npm:
+
+`node -v`
+`npm -v`
+
+### SCRAPER INSTALLATION
 
 1. Clone the Repository
     `git clone https://github.com/eugene-choi-dev/scraper-howl.git`
@@ -28,16 +30,21 @@ npm (Node Package Manager)
 2. Install Dependencies
     `npm install`
 
-*** RUNNING THE PROJECT ***
+### RUNNING THE APPLICATION
 
 1. Start the Server
     `npm run start`
 `
-2. Set range for pages to scrape by adjusting values of `START_PAGE` and `END_PAGE` in the index.js file. Optionally, you can adjust the maximum number of retries for a page that fails to scrape but changing the value of `MAX_RETRIES`.
+2. Set the range of pages to scrape by adjusting the values of `START_PAGE` and `END_PAGE` in the `index.js` file. Optionally, you can adjust the maximum number of retries for a page that fails to scrape by changing the value of `MAX_RETRIES`. Save the file.
 
-3. Trigger Scraping
-    Open your web browser and navigate to http://localhost:8000/scrape
+3. Trigger Scraping:
+    Open your web browser and navigate to http://localhost:8000/scrape. Refreshing the browser page will reinitialize the application.
 
-*** NOTES ***
 
-The scraper will print to console the data scraped from each page as the application runs. After the application has finished processing all pages within the specified range, it will return all of the scraped data (`allItems`) in the browser window in JSON-like format.
+### NOTES
+
+You can monitor the scraping progress in the console/terminal. If any pages fail to scrape, those page numbers will be listed after the application has completed running. Running the application again will automatically skip over any pages that have already been successfully scraped.
+
+Data from successfully scraped pages will be incrementally saved into `temp_scraped_data.json`. This is a fallback measure to retain scraped data in case the application fails or is canceled before completion. The same data will be moved into `scraped_data.json` once the application has completed processing all pages.
+
+Data in `scraped_data.json` is organized by pages. To compile this data into a singular JSON format, you can use the `compileData()` function by running the `node compileData.js` command in the terminal. The compiled data can be found in `compiled_data.json`.
