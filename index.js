@@ -6,9 +6,9 @@ const app = express();
 const PORT = 8000;
 const BASE_URL =
   "https://www.governmentjobs.com/careers/lacounty/classspecs?page=";
-const START_PAGE = 1;
-const END_PAGE = 10;
-const MAX_RETRIES = 10;
+const START_PAGE = 1; // set starting page
+const END_PAGE = 10; // set last page to scrape
+const MAX_RETRIES = 10; // set maximum number of retries for any page that initially fails scraping
 
 const dataFilePath = "scraped_data.json";
 const tempDataFilePath = "temp_scraped_data.json";
