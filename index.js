@@ -1,117 +1,170 @@
-const puppeteer = require('puppeteer');
-const express = require('express');
+const fs = require("fs");
+const puppeteer = require("puppeteer");
+const express = require("express");
 const app = express();
 
 const PORT = 8000;
-const BASE_URL = 'https://www.governmentjobs.com/careers/lacounty/classspecs?page=';
+const BASE_URL =
+  "https://www.governmentjobs.com/careers/lacounty/classspecs?page=";
 const START_PAGE = 1;
-const END_PAGE = 5;
-const MAX_RETRIES = 5;
+const END_PAGE = 10;
+const MAX_RETRIES = 10;
 
-async function scrapeDynamicContent(baseUrl, startPage, endPage) {
-  const browser = await puppeteer.launch({ headless: true });
-  let allItems = [];
-  let pagesWithLessThan10Items = [];
+const dataFilePath = "scraped_data.json";
+const tempDataFilePath = "temp_scraped_data.json";
+const userAgents = require("./userAgents");
 
-  for (let pageIdx = startPage; pageIdx <= endPage; pageIdx++) {
-    let retryCount = 0; 
-    let scrapeSuccessful = false;
+function readExistingData() {
+  if (fs.existsSync(dataFilePath)) {
+    return JSON.parse(fs.readFileSync(dataFilePath, "utf8"));
+  }
+  return {};
+}
 
-    while (!scrapeSuccessful && retryCount < MAX_RETRIES) {
-      retryCount++;
-      const page = await browser.newPage();
-      const targetUrl = `${baseUrl}${pageIdx}`;
-      await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 0 });
-      let pageData = [];
+function saveData(data, temp = false) {
+  const filePath = temp ? tempDataFilePath : dataFilePath;
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+}
 
-      try {
-        const listItems = await page.$$('#class-specs-list-container .list-item');
-
-        for (const element of listItems) {
-          const classTitle = await element.$eval('.item-details-link', el => el.innerText.trim());
-          const classCode = await element.$eval('.list-meta li:first-child', el => el.innerText.trim());
-          const salary = await element.$$eval('.list-meta li:nth-child(2) span', spans => spans.map(span => span.innerText.trim()).join(' '));
-          let definition = await element.$eval('.list-entry span', el => el.innerText.trim());
-          definition = definition
-            .replace(/^DEFINITION:\s+/i, '') 
-            .replace(/CLASSIFICATION STANDARDS:.*$/s, '');
-
-          const detailsLink = await element.$('.item-details-link');
-          await detailsLink.evaluate(el => el.scrollIntoView());
-          try {
-            await detailsLink.click();
-          } catch (error) {
-            await page.evaluate(el => el.click(), detailsLink);
-          }
-
-          let trainingAndExperience = '';
-          try {
-            await page.waitForSelector('.tab-pane.active.fr-view', { visible: true, timeout: 15000 });
-            const tabPaneContent = await page.$eval('.tab-pane.active.fr-view', el => el.innerText);
-          
-            const trainingAndExperienceIndex = tabPaneContent.indexOf("TRAINING AND EXPERIENCE:");
-            if (trainingAndExperienceIndex !== -1) {
-              trainingAndExperience = tabPaneContent.substring(trainingAndExperienceIndex);
-              trainingAndExperience = trainingAndExperience
-                .replace(/^TRAINING AND EXPERIENCE:\s+/i, '')
-                .replace(/LICENSE.*$/s, '')
-                .replace(/\n/g, ' ');
-            }
-          
-          } catch (error) {
-            console.error(`Error while scraping training and experience on page ${pageIdx}:`, error);
-          }
-
-          const closeSelector = '.flyout-overlay.active .close-button';
-          if (await page.$(closeSelector)) {
-            await page.click(closeSelector);
-            await page.waitForSelector(closeSelector, { hidden: true });
-          }
-
-          const scrapedData = { classTitle, classCode, salary, definition, trainingAndExperience };
-          pageData.push(scrapedData);
-        }
-
-        if (pageData.length !== 10 && pageIdx < endPage) {
-          throw new Error(`Page ${pageIdx} returned less than 10 items`);
-        }
-
-        scrapeSuccessful = true;
-        allItems.push(...pageData);
-
-        console.log(`Scraped Data from Page ${pageIdx} on Attempt ${retryCount}:`);
-        console.log(pageData);
-
-      } catch (error) {
-        console.error(`Attempt ${retryCount} for Page ${pageIdx}:`, error.message);
-      } finally {
-        await page.close();
-      }
-
-      if (!scrapeSuccessful) {
-        const randomDelay = Math.floor(Math.random() * (600 - 400 + 1)) + 400;
-        await new Promise(resolve => setTimeout(resolve, randomDelay));
-      }
-    }
-
-    if (retryCount > MAX_RETRIES) {
-      console.error(`Max retries reached for Page ${pageIdx}. Moving to next page.`);
-      pagesWithLessThan10Items.push(pageIdx);
+async function retryOperation(operation, maxRetries, delay = 2000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 2;
     }
   }
+}
 
+async function delayBetweenRequests(delay) {
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+async function scrapeDynamicContent(baseUrl, startPage, endPage) {
+  const browser = await puppeteer.launch({ headless: "true" });
+  const page = await browser.newPage();
+  let allItems = readExistingData();
+  let failedPages = [];
+  let successfulPages = [];
+
+  console.log("Scrape start...");
+
+  for (let pageIdx = startPage; pageIdx <= endPage; pageIdx++) {
+    const randomUserAgent =
+      userAgents[Math.floor(Math.random() * userAgents.length)];
+    await page.setUserAgent(randomUserAgent);
+    console.log(`Using user agent for page ${pageIdx}: ${randomUserAgent}`);
+
+    if (allItems[pageIdx]) {
+      console.log(`Data for page ${pageIdx} already exists. Skipping.`);
+      successfulPages.push(pageIdx);
+      continue;
+    }
+
+    let scrapeSuccessful = false;
+    let pageItems = [];
+
+    try {
+      const targetUrl = `${baseUrl}${pageIdx}`;
+      await page.goto(targetUrl, { waitUntil: "networkidle2", timeout: 60000 });
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      const classSpecIds = await retryOperation(async () => {
+        return await page.$$eval(
+          ".search-results-listing-container [data-class-spec-id]",
+          (elements) =>
+            elements.map((el) => el.getAttribute("data-class-spec-id"))
+        );
+      }, MAX_RETRIES);
+
+      for (const id of classSpecIds) {
+        const detailUrl = `https://www.governmentjobs.com/careers/lacounty/classspecs/${id}`;
+        await retryOperation(async () => {
+          await page.goto(detailUrl, {
+            waitUntil: "networkidle2",
+            timeout: 60000,
+          });
+        }, MAX_RETRIES);
+
+        let infoContent = await retryOperation(async () => {
+          return await page.$eval(".info-content", (el) => el.innerText);
+        }, MAX_RETRIES);
+
+        const classTitle =
+          infoContent.match(/Class Title\s+(.*?)\s+Class Code/)?.[1] || "";
+        const classCode =
+          infoContent.match(/Class Code\s+(.*?)\s+Salary/)?.[1] || "";
+        const salary =
+          infoContent.match(/Salary\s+([\s\S]*?)\s+DEFINITION/)?.[1].trim() ||
+          "";
+        let definition =
+          infoContent.match(
+            /DEFINITION:\s+(.*?)\s+CLASSIFICATION STANDARDS:/s
+          )?.[1] || "";
+        definition = definition.replace(/\n/g, "");
+        let trainingAndExperience =
+          infoContent.match(
+            /TRAINING AND EXPERIENCE:\s+(.*?)\s+LICENSE:/s
+          )?.[1] || "";
+        trainingAndExperience = trainingAndExperience.replace(/\n/g, "");
+
+        pageItems.push({
+          classTitle,
+          classCode,
+          salary,
+          definition,
+          trainingAndExperience,
+        });
+      }
+
+      if (pageItems.length > 0) {
+        allItems[pageIdx] = pageItems;
+        successfulPages.push(pageIdx);
+        scrapeSuccessful = true;
+        console.log(`Page ${pageIdx} successfully scraped.`);
+        saveData(allItems, true);
+      }
+    } catch (error) {
+      console.error(`Page ${pageIdx} failed to scrape: Error -`, error.message);
+      failedPages.push(pageIdx);
+      console.log(`Page ${pageIdx} failed to scrape.`);
+    }
+
+    await delayBetweenRequests(5000);
+  }
+
+  await page.close();
   await browser.close();
+
+  if (fs.existsSync(tempDataFilePath)) {
+    fs.renameSync(tempDataFilePath, dataFilePath);
+  }
+
+  if (
+    successfulPages.length + failedPages.length === END_PAGE - START_PAGE + 1 &&
+    failedPages.length === 0
+  ) {
+    console.log("All pages scraped successfully.");
+  } else {
+    console.log(
+      "Failed to scrape the following page(s):",
+      failedPages.join(", ")
+    );
+  }
 
   return allItems;
 }
 
-app.get('/scrape', async (req, res) => {
+app.get("/scrape", async (req, res) => {
   try {
     const items = await scrapeDynamicContent(BASE_URL, START_PAGE, END_PAGE);
     res.json(items);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error occurred while scraping');
+    res.status(500).send("Error occurred while scraping");
   }
 });
 
