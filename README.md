@@ -19,6 +19,7 @@ This project contains a Node.js script for web scraping. It uses Puppeteer for s
 ### Verify the installation by checking the version of Node.js and npm:
 
 `node -v`
+
 `npm -v`
 
 ### SCRAPER INSTALLATION
@@ -26,6 +27,7 @@ This project contains a Node.js script for web scraping. It uses Puppeteer for s
 1. Clone the Repository:
 
     `git clone https://github.com/eugene-choi-dev/scraper-howl.git`
+
     `cd scraper-howl`
 
 2. Install Dependencies:
@@ -37,7 +39,7 @@ This project contains a Node.js script for web scraping. It uses Puppeteer for s
 1. Start the Server:
 
     `npm run start`
-`
+
 2. Set the range of pages to scrape by adjusting the values of `START_PAGE` and `END_PAGE` in the `index.js` file. Optionally, you can adjust the maximum number of retries for a page that fails to scrape by changing the value of `MAX_RETRIES`. Save the file.
 
 3. Trigger Scraping:
